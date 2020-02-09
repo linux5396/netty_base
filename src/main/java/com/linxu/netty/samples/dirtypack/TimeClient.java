@@ -1,13 +1,14 @@
 package com.linxu.netty.samples.dirtypack;
 
+import com.linxu.netty.samples.endecode.MessagePackDecoder;
+import com.linxu.netty.samples.endecode.MessagePackEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
-import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.*;
 import io.netty.handler.codec.string.StringDecoder;
 
 /**
@@ -27,10 +28,17 @@ public class TimeClient {
                     @Override
                     protected void initChannel(SocketChannel channel) throws Exception {
                         //自定义的编码器
-                       // new DelimiterBasedFrameDecoder(1024, Unpooled.copiedBuffer("$_".getBytes()));
-                        channel.pipeline().addLast(new LineBasedFrameDecoder(1024));
-                        channel.pipeline().addLast(new StringDecoder());
-                        channel.pipeline().addLast(new TimeClientHandler());
+                         //new DelimiterBasedFrameDecoder(1024, Unpooled.copiedBuffer("$_".getBytes()));
+                       // new FixedLengthFrameDecoder(10);
+//                         channel.pipeline().addLast(new LineBasedFrameDecoder(1024));
+//                        channel.pipeline().addLast(new StringDecoder());
+//                        channel.pipeline().addLast(new TimeClientHandler());
+                        //channel.pipeline().addLast("frameDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
+                        //添加两个字节的帧头部，解决粘包/半包问题
+                        channel.pipeline().addLast("frameEncoder", new LengthFieldPrepender(2));
+                        channel.pipeline().addLast("msg en", new MessagePackEncoder());
+                       // channel.pipeline().addLast("msg de", new MessagePackDecoder());
+                        channel.pipeline().addLast(new SelfObjClientHandler());
                     }
                 });
         try {

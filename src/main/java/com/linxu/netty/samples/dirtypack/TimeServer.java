@@ -1,11 +1,15 @@
 package com.linxu.netty.samples.dirtypack;
 
+import com.linxu.netty.samples.endecode.MessagePackDecoder;
+import com.linxu.netty.samples.endecode.MessagePackEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoop;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 
@@ -38,9 +42,14 @@ public class TimeServer {
     private class ChildHandler extends ChannelInitializer<SocketChannel> {
         @Override
         protected void initChannel(SocketChannel channel) throws Exception {
-            channel.pipeline().addLast(new LineBasedFrameDecoder(1024));
-            channel.pipeline().addLast(new StringDecoder());
-            channel.pipeline().addLast(new TimeServerHandler());
+//            channel.pipeline().addLast(new LineBasedFrameDecoder(1024));
+//            channel.pipeline().addLast(new StringDecoder());
+//            channel.pipeline().addLast(new TimeServerHandler());
+            channel.pipeline().addLast("frameDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
+          //  channel.pipeline().addLast("msg en", new MessagePackDecoder());
+           // channel.pipeline().addLast("frameEncoder", new LengthFieldPrepender(2));
+            channel.pipeline().addLast("msg de", new MessagePackDecoder());
+            channel.pipeline().addLast(new SelfObjServerHandler());
         }
     }
 

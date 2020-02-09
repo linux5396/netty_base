@@ -11,7 +11,7 @@ import org.msgpack.MessagePack;
  * <tip>take care of yourself.everything is no in vain.</tip>
  * 利用MSG PACK 实现编码
  */
-public class MessagePackEncoder extends MessageToByteEncoder {
+public class MessagePackEncoder extends MessageToByteEncoder<Object> {
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, Object o, ByteBuf byteBuf) throws Exception {
         MessagePack messagePack = new MessagePack();
