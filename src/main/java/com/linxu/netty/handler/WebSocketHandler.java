@@ -41,8 +41,13 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     private void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) {
+        //先验证头部
+
+
+        //下面是验证版本等
         WebSocketServerHandshakerFactory handshakerFactory = new WebSocketServerHandshakerFactory(
                 "ws://localhost:9090/websocket", null, false);
+        //这里会判断websocket的协议版本等；如果创建失败，则证明握手失败
         handshaker = handshakerFactory.newHandshaker(request);
 
         if (handshaker == null) {
@@ -51,6 +56,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         } else {
             // 动态加入web socket的编解码处理
             try {
+                //加入的过程在源码中
                 handshaker.handshake(ctx.channel(), request);
             } catch (Exception e) {
                 log.error("web socket handshake occurred error.Missing upgrade! ");

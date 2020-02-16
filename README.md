@@ -1,24 +1,9 @@
-# Netty模块基础
-本项目提供了一个基于Netty与SpringBoot+的便捷网络服务器模板，包含多种网络协议。
+# netty_base
+在项目开发中经常使用netty做一些网络通讯模块的开发，故今天手写几个简单的使用用例，以供后来人参考。
 
-## 协议类型
-Http、WebSocket、Socket、UDP.
-
-### 模块说明
-
-`-netty `
-
-     -config --配置参数与配置注入`
-    
-     -controller --Http`
-    
-     -handler --对应协议的处理器`
-   
-     -server --对应协议的服务启动器`
-    
- ### 配置说明
- 配置文件按照SpringBoot的资源约束包规范，于resources下。
- 
- ### 应用入口
- 
- `NettyApplication.class`
+## TCP粘/拆包的解决之道
+- 真实的项目应用中，由于TCP的SEND/REC都是依赖于底层的网络传输的，准确来说，可以说是依赖于滑动接收窗口。
+就如TCP，我们都知道TCP的传输过程为了提高效率，可能作出如下操作：
+- 数据积累/分块传输（粘包）
+即传送可能会将多个数据包一块发送，而在接收端，可能只接收到一次事件触发。
+下面将以timeServer作为例子。
