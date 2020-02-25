@@ -1,5 +1,9 @@
 package com.linxu.nio.bug;
 
+import io.netty.channel.socket.nio.NioSocketChannel;
+
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -14,22 +18,25 @@ import java.util.Set;
  * @date 2020/2/19
  * <tip>take care of yourself.everything is no in vain.</tip>
  */
-public class CPUFULL {
-    public static void main(String[] args) throws Exception{
-        System.err.println(SelectionKey.OP_READ);
-        System.err.println(SelectionKey.OP_ACCEPT);
-        System.err.println(SelectionKey.OP_CONNECT);
-        System.err.println(SelectionKey.OP_WRITE);
+public class CPUFULL implements Serializable {
+    private Object readResolve() {
+        System.err.println("");
+        return null;
+    }
+
+    static volatile boolean halfPackFlags = false;
+
+    public static void main(String[] args) throws Exception {
         Selector selector = Selector.open();
         System.out.println(selector.isOpen());
         ServerSocketChannel socketChannel = ServerSocketChannel.open();
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 8080);
         socketChannel.bind(inetSocketAddress);
         socketChannel.configureBlocking(false);
-        int ops = socketChannel.validOps();
-        SelectionKey selectionKey = socketChannel.register(selector, ops, null);
+        SelectionKey selectionKey = socketChannel.register(selector, SelectionKey.OP_ACCEPT, null);
         Set selectedKeys = selector.selectedKeys();
-        for (;;) {
+
+        for (; ; ) {
             System.out.println("等待...");
             /**
              * 通常是阻塞的，但是在epoll空轮询的bug中，
@@ -62,6 +69,22 @@ public class CPUFULL {
                         client.close();
                         System.out.println("The Client messages are complete; close the session.");
                     }
+                    //注册监听读写操作位。
+                    key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                    //通过半包标识，来触发写操作。
+                } else if (key.isWritable()) {
+                    System.err.println(key.channel() + "will write.");
+                    SocketChannel channel = (SocketChannel) key.channel();
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+                    byteBuffer.put("server msg".getBytes());
+                    try {
+                        //取消写半包标志
+                        key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    channel.write(byteBuffer);
+                    byteBuffer = null;
                 }
                 itr.remove();
             }
